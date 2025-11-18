@@ -54,26 +54,25 @@ for distance in column_index:
     print(f"mu = {mu:.3f}"+f", sigma = {sigma:.3f}")
     jacknife_error.append(jackknife_gaussian(x, y, initial_guess))
     # Plot
-    plt.scatter(x, y, color='red', label='Data')
-    plt.plot(x, gaussian(x, *params), color='blue', label='Gaussian fit')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.legend()
-    plt.show()
+    # plt.scatter(x, y, color='red', label='Data')
+    # plt.plot(x, gaussian(x, *params), color='blue', label='Gaussian fit')
+    # plt.xlabel('Channel')
+    # plt.ylabel('Counts')
+    # plt.title(f'Gaussian Fit for Distance {distance} m')
+    # plt.legend()
+    # plt.show()
 x_error=jacknife_error
 
 
 def calibration_function(x):
-    return 1*2/360*1/5000000 * (x-176)*10**9 /2 # in ns 
+    return 1*2/360*1/5000000 * (x-176)*10**9  # in ns 
 
 
 
 
 calibrated_time=calibration_function(np.array(uncalibrated_time))
 calibrated_time_stdev=1*2/360*1/5000000*10**9*(np.array(uncalibrated_time_stdev))
-print(calibrated_time)
-print(column_index)
-print(calibrated_time_stdev)
+
 
 
 
@@ -88,20 +87,49 @@ def linear(x,a,b):
 
 
 
+
 column_index_float = [float(i) for i in column_index]
-params, cov = curve_fit(linear,calibrated_time,column_index_float,sigma=calibrated_time_stdev)
-a, b = params 
-plt.errorbar(calibrated_time,column_index_float,yerr=y_error,xerr=x_error,fmt='o',label='Speed Data at Various Distances', elinewidth=2,  capsize=5, capthick=2 )
+print(calibrated_time)
+print(column_index_float)
+params, cov = curve_fit(linear,calibrated_time,column_index_float)
+a,b = params
+c=1*2/360*1/5000000*10**9
+print(a,b)
+x_error= [c*float(i) for i in x_error]
+plt.rcParams.update({
+    'font.size': 24,        # doubled from typical ~12
+    'axes.labelsize': 24,
+    'axes.titlesize': 28,
+    'xtick.labelsize': 22,
+    'ytick.labelsize': 22,
+    'legend.fontsize': 22
+})
+plt.errorbar(calibrated_time, column_index_float,
+             yerr=y_error, xerr=x_error,
+             fmt='o',
+             label='Speed Data at Various Distances',
+             elinewidth=2, capsize=5, capthick=2)
+
 plt.xlabel('Calibrated Time (ns)')
-plt.title('Muon Distance vs Time')
+plt.title('Muon Distance Traveled vs Time')
 plt.ylabel('Distance (m)')
-plt.plot(calibrated_time,linear(np.array(calibrated_time),*params),color='red')
+
+# --- Add linear fit and legend entry ---
+y_pred = linear(np.array(calibrated_time), *params)
+R2 = r2_score(column_index_float, y_pred)
+
+fit_label = f"Linear fit: y = {a:.4f}x + {b:.4f}\nR² = {R2:.5f}"
+
+plt.plot(
+    calibrated_time,
+    y_pred,
+    color='red',
+    label=fit_label
+)
+# ---------------------------------------
+
+plt.legend(loc='upper left')
 plt.show()
-
-
-
-print(f"Calibration parameters: speed of muon = {a*10:.6f} x10^8 m/s")
-
 
 
 

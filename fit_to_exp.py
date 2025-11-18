@@ -1,14 +1,11 @@
-import numpy as np 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit 
+from scipy.optimize import curve_fit
 
 # === Load data ===
-df = pd.read_csv('/home/alexa/experiment_2/times.csv')
-time = df.iloc[:, 0].to_numpy()
-
-df2 = pd.read_csv('/home/alexa/experiment_2/counts.csv')
-counts = df2.iloc[:, 0].to_numpy()
+time = pd.read_csv('/home/alexa/experiment_2/times.csv').iloc[:,0].to_numpy()
+counts = pd.read_csv('/home/alexa/experiment_2/counts.csv').iloc[:,0].to_numpy()
 
 # === Calibration ===
 def calibration_function(x):
@@ -16,29 +13,52 @@ def calibration_function(x):
 
 calibrated_time = calibration_function(time)
 
-# === Define exponential model ===
-def exponential(x, A, B):
-    return B * np.exp(-A * x)
+# === Define exponential model using lifetime τ ===
+def exponential_model(t, N0, tau):
+    return N0 * np.exp(-t / tau)
 
-# === Apply mask: keep only times < 200 ns ===
-mask = calibrated_time > 100
+# === Apply mask: use times > 150 ns to avoid rapid early drop ===
+mask = calibrated_time > 150
 time_masked = calibrated_time[mask]
 counts_masked = counts[mask]
 
-# === Fit ===
-params, cov = curve_fit(exponential, time_masked, counts_masked, p0=(0.01, max(counts_masked)))
-A, B = params
+# === Fit exponential ===
+p0 = [max(counts_masked), 2200]  # initial guess: N0, τ ~ 2200 ns
+params, cov = curve_fit(exponential_model, time_masked, counts_masked, p0=p0)
+N0_fit, tau_fit = params
 
-# === Plot ===
+# === Plotting ===
+plt.rcParams.update({
+    'font.size': 24,
+    'axes.labelsize': 24,
+    'axes.titlesize': 28,
+    'xtick.labelsize': 22,
+    'ytick.labelsize': 22,
+    'legend.fontsize': 22
+})
+
 plt.scatter(calibrated_time, counts, label='All Data', alpha=0.5)
-plt.scatter(time_masked, counts_masked, color='orange', label='Fitted Range (>200 ns)')
-plt.plot(time_masked, exponential(time_masked, A, B), color='red', label='Fit')
 plt.xlabel('Calibrated Time (ns)')
 plt.ylabel('Counts')
+plt.title('Counts vs Time')
+plt.legend()
+plt.show()
+
+
+from sklearn.metrics import r2_score
+r_squared = r2_score(counts_masked, exponential_model(time_masked, N0_fit, tau_fit))
+print(f"R^2 of the fit = {r_squared:.4f}")
+
+# === Plot with R^2 in legend ===
+plt.scatter(time_masked, counts_masked, color='orange', label='Fit Range (>150 ns)')
+plt.plot(time_masked, exponential_model(time_masked, N0_fit, tau_fit), color='red',
+         label=f'Fit: τ={tau_fit:.1f} ns, R²={r_squared:.3f}')
+plt.xlabel('Calibrated Time (ns)')
+plt.ylabel('Counts')
+plt.title('Exponential Fit to Muon Decay')
 plt.legend()
 plt.show()
 
 # === Print results ===
-print(f"Decay constant A = {A:.5f} ns⁻¹")
-print(f"Muon lifetime τ = {1/A:.2f} ns")
-
+print(f"Fitted initial count N0 = {N0_fit:.2f}")
+print(f"Muon lifetime τ = {tau_fit:.2f} ns")
