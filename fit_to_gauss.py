@@ -7,7 +7,7 @@ import os
 from scipy.special import erf
 from sklearn.metrics import r2_score
 
-speed=pd.read_csv('/home/alexa/experiment_2/speed.csv',sep='\s+')
+speed=pd.read_csv('/home/alexa/experiment_2/Grad_lab_Muon_Experiment/speed.csv',sep='\s+')
 column_index = speed.columns.tolist()
 column_index.pop(0)
 
@@ -118,7 +118,12 @@ plt.ylabel('Distance (m)')
 y_pred = linear(np.array(calibrated_time), *params)
 R2 = r2_score(column_index_float, y_pred)
 
-fit_label = f"Linear fit: y = {a:.4f}x + {b:.4f}\nR² = {R2:.5f}"
+perr = np.sqrt(np.diag(cov))
+a_err, b_err = perr
+
+print(f"Slope a = {a:.5f} ± {a_err:.5f}")
+print(f"Intercept b = {b:.5f} ± {b_err:.5f}")
+fit_label = f"Linear fit: slope= {a:.4f} ± {a_err:.4f}\nR² = {R2:.5f}"
 
 plt.plot(
     calibrated_time,
@@ -130,6 +135,5 @@ plt.plot(
 
 plt.legend(loc='upper left')
 plt.show()
-
 
 

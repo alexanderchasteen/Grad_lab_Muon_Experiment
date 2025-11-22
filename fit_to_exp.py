@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 # === Load data ===
-time = pd.read_csv('/home/alexa/experiment_2/times.csv').iloc[:,0].to_numpy()
-counts = pd.read_csv('/home/alexa/experiment_2/counts.csv').iloc[:,0].to_numpy()
+time = pd.read_csv('times.csv').iloc[:,0].to_numpy()
+counts = pd.read_csv('counts.csv').iloc[:,0].to_numpy()
 
 # === Calibration ===
 def calibration_function(x):
@@ -48,11 +48,14 @@ plt.show()
 from sklearn.metrics import r2_score
 r_squared = r2_score(counts_masked, exponential_model(time_masked, N0_fit, tau_fit))
 print(f"R^2 of the fit = {r_squared:.4f}")
+perr = np.sqrt(np.diag(cov))
+a_err, b_err = perr
 
+print(a_err,b_err)
 # === Plot with R^2 in legend ===
 plt.scatter(time_masked, counts_masked, color='orange', label='Fit Range (>150 ns)')
 plt.plot(time_masked, exponential_model(time_masked, N0_fit, tau_fit), color='red',
-         label=f'Fit: τ={tau_fit:.1f} ns, R²={r_squared:.3f}')
+          label=f'Fit: τ={tau_fit:.1f} ± {b_err:.2f} ns, R²={r_squared:.3f}')
 plt.xlabel('Calibrated Time (ns)')
 plt.ylabel('Counts')
 plt.title('Exponential Fit to Muon Decay')
@@ -62,3 +65,4 @@ plt.show()
 # === Print results ===
 print(f"Fitted initial count N0 = {N0_fit:.2f}")
 print(f"Muon lifetime τ = {tau_fit:.2f} ns")
+
