@@ -7,7 +7,7 @@ import os
 from scipy.special import erf
 from sklearn.metrics import r2_score
 
-speed=pd.read_csv('/home/alexa/experiment_2/Grad_lab_Muon_Experiment/speed.csv',sep='\s+')
+speed=pd.read_csv('/home/alexa/Grad_lab_Muon_Experiment/speed.csv',sep='\s+')
 column_index = speed.columns.tolist()
 column_index.pop(0)
 
